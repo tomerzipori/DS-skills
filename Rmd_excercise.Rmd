@@ -1,0 +1,190 @@
+---
+title: "Advance Rmd"
+output:
+  html_document:
+    toc: true
+    # toc_float: true
+# always_allow_html: true
+---
+
+```{r setup}
+#| include = FALSE
+knitr::opts_chunk$set(echo = FALSE)
+
+library(afex)
+library(glue)
+library(scales)
+```
+
+## Equations / Math
+
+We can write equations and math notation using LaTeX inside a pair of \$ symbols.
+
+Here is an example of *displayed equations* (standalone):
+
+$$
+\hat{\sigma}^2_{x}=\frac{\sum_{i=1}^{N} (x_i-\bar{x})^2 }{N-1}
+$$
+
+We can also have *inline equations*, $t^2(df)=F(1,df)$ and $z^2=\chi^2(1)$.
+
+## Glue
+
+The `glue` package provides an easy interface for interpolate a strings. 
+
+For example:
+
+```{r glue}
+#| echo=TRUE
+glue::glue("{subject} {verb} {object}",
+           subject = c("I","You"),
+           verb = "love",
+           object = "sleeping")
+
+glue::glue("The mean of (0, 1, 2) is {mean(0:2)}")
+```
+
+Mixed with rmd, glue can be a powerful tool.
+
+Let's look at how we may report an anova result:
+
+```{r aov}
+library(afex)
+
+data(md_12.1)
+a <- aov_ez("id", "rt", md_12.1,
+            within = c("angle", "noise"), 
+            anova_table = list(es = "pes"))
+a
+```
+
+We want some inline reporting:
+
+```{r format_with_glue}
+library(scales) # function for formatting numbers and more
+
+number2 <- number_format(accuracy = .01) # this makes a function that formats number to the 2 nearest decimals.
+pvalue3 <- function(x) {
+  p <- pvalue(x, accuracy = .001, add_p = TRUE)
+  stringr::str_remove(p, "0(?=\\.)") # remove 0 before decimal 
+}
+
+ 
+aov_report <- 
+  glue::glue_data(a$anova_table, 
+                  "$F({number2(`num Df`)},{number2(`den Df`)})={number2(`F`)}$, ",
+                  "$MSE={number2(MSE)}$, ",
+                  "${pvalue3(`Pr(>F)`)}$, ",
+                  "$\\eta^2_p={number2(pes)}$")
+```
+
+The main effect for *angle*: `r aov_report[1]`.  
+The main effect for *noise*: `r aov_report[2]`.  
+The interaction effect between *angle* and *noise*: `r aov_report[3]`.
+
+```{r some_fig}
+#| fig.width = 6,
+#| fig.height = 2,
+#| fig.cap = "Just a plot"
+afex_plot(a, ~ noise, ~ angle, error = "within")
+```
+
+## Tables
+
+Rmd comes with a basic function for formatting tables:
+
+```{r make_table}
+my_tab <- mtcars[1:5, 1:5]
+knitr::kable(my_tab)
+```
+
+There are many other packages for advanced formatting, the most popular ones are:
+
+- [`flextable`](https://davidgohel.github.io/flextable/)
+- [`kableExtra`](https://haozhu233.github.io/kableExtra/) (partial support for Word outputs)
+- [`gt`](https://gt.rstudio.com/) (no support for Word outputs)
+
+*And [more](https://bookdown.org/yihui/rmarkdown-cookbook/table-other.html)...*
+
+### flextable
+
+```{r flextable}
+library(flextable)
+
+flextable(my_tab) |> 
+  theme_alafoli() |> 
+  color(~ drat > 3.5, ~ drat, color = "red") |> 
+  add_header_row(
+    values = c("some measures", "other measures"),
+    colwidths = c(3, 2))
+```
+
+(Personally, this is my favorite package.)
+
+
+### kableExtra
+
+```{r kableExtra}
+library(kableExtra)
+
+kbl(my_tab) |> 
+  kable_classic(full_width = F, html_font = "Cambria") |> 
+  column_spec(6, color = "white",
+              background = spec_color(mtcars$drat[1:8], end = 0.7),
+              popover = paste("am:", mtcars$am[1:8]))
+
+```
+
+### gt
+
+```{r gt}
+library(gt)
+gt(my_tab) |> 
+  tab_header(
+    title = md("Data listing from **gtcars**"),
+    subtitle = md("`gtcars` is an R dataset")
+  ) |> 
+  tab_row_group(
+    label = "Other cars",
+    rows = 4:5
+  ) |> 
+   tab_row_group(
+    label = "First 3 cars",
+    rows = 1:3
+  )
+```
+
+
+## Templates
+
+...
+
+
+## Exercise
+
+1. Install the following packages 
+
+```{r, eval=FALSE}
+install.packages(c("rticles", "pagedown", "rmdformats"))
+```
+
+2. Make a new Rmd doc from a template.
+
+Explore the template options. For example, if you get the following YAML:
+
+
+```
+---
+output: pagedown::business_card
+---
+```
+
+You can see all the options with `?pagedown::business_card`.
+
+3. Load some dataset (come on, you have one).
+
+4. Fill the doc with some data exploration
+    - Make a plot
+    - Make a table
+    - Use `glue` to generate some text and/or equations.
+

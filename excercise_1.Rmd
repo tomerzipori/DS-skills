@@ -1,0 +1,63 @@
+---
+phone: "*****"
+email: "tomerzip@post.bgu.ac.il"
+person: 
+  - name: Tomer Zipori
+    title: CEO of 
+    repeat: 1
+googlefonts: "Righteous" # feel free to try other fonts at https://fonts.google.com
+paperwidth: 8.5in
+paperheight: 11in
+cardwidth: 4in
+cardheight: 6in
+output: pagedown::business_card
+---
+
+```{r setup}
+#| echo: false
+#| output: false
+#| warning: false
+library(tidyverse)
+library(tidytuesdayR)
+library(gganimate)
+library(transformr)
+library(hms)
+library(glue)
+```
+
+```{r data}
+#| echo: false
+#| output: false
+#| warning: false
+tuesdata <- tidytuesdayR::tt_load(2023, week = 17)
+
+winners <- tuesdata$winners
+london_marathon <- tuesdata$london_marathon
+
+winners_labels <- winners %>%
+  filter(Category %in% c("Men", "Women")) %>%
+  filter(Year %in% c(1981, 1985, 2003, 2019, 2022))
+```
+
+```{r plotting}
+#| echo: false
+#| warning: false
+plot <- winners %>%
+  filter(Category %in% c("Men", "Women")) %>%
+  ggplot(aes(x = Year, y = Time, group = Category, color = Category)) +
+  geom_point(show.legend = F) +
+  geom_line(show.legend = F) +
+  geom_text(aes(x = max(Year), label = Time)) +
+  coord_cartesian(clip = "off") +
+  theme_classic() +
+  geom_hline(yintercept = hms(0, 0, 2), linetype = "dashed", color = "red", show.legend = F) +
+  transition_reveal(Year, keep_last = T) +
+  view_follow(fixed_y = T)
+
+animate(plot, fps = 10, end_pause = 60)
+```
+
+
+
+
+
