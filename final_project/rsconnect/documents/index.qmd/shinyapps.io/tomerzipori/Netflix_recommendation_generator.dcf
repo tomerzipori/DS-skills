@@ -1,0 +1,15 @@
+name: Netflix_recommendation_generator
+title: Netflix_recommendation_generator
+username:
+account: tomerzipori
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9477597
+bundleId: 7511454
+url: https://tomerzipori.shinyapps.io/Netflix_recommendation_generator/
+when: 1690715718.39843
+lastSyncTime: 1690715718.39844
+quarto_version: 1.3.361
+quarto_engines: knitr
+asMultiple: FALSE
+asStatic: FALSE

@@ -1,0 +1,182 @@
+---
+title: "Netflix"
+author: "Tomer Zipori"
+execute:
+  warning: false
+  message: false
+  code-fold: true
+  cache: true
+format: 
+  html:
+    page-layout: custom
+server: shiny
+---
+
+```{r}
+#| echo: false
+#| output: false
+library(tidyverse)
+library(extrafont)
+library(lubridate)
+library(ggwordcloud)
+library(quanteda)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(flextable)
+library(shiny)
+```
+
+
+# Introduction
+The following dicument and apps are using the *netflix* dataset from [Kaggle](https://www.kaggle.com/datasets/shivamb/netflix-shows). It contains data of movies and TV shows added to Netflix's streaming service since 2008.
+
+# Looking at the data
+```{r}
+netflix <- read_csv("netflix_titles.csv", show_col_types = F)
+
+netflix_for_table <- netflix |>
+  select(type, title, director, date_added, rating, description) |>
+  head(7)
+```
+
+```{r}
+netflix_clean <- netflix |>
+  mutate(category = str_split(listed_in, ",|&")) |>
+  mutate(category = map(category, str_trim))
+
+unique(unlist(netflix_clean$category))
+```
+
+
+
+```{r}
+flextable(netflix_for_table) |>
+  theme_alafoli()
+```
+
+
+
+# Explore the data
+```{r}
+#| panel: input
+
+```
+
+
+# Show Recommendations
+```{r}
+#| context: server
+months_names <- data.frame(name = month.name,
+                           month = seq(1,12,1))
+
+data_clean <- netflix |>
+  mutate(month_added = word(date_added, 1),
+         day_added = str_remove_all(word(date_added, 2), ","),
+         year_added = word(date_added, 3)) |>
+  left_join(months_names, by = join_by(month_added == name)) |>
+  mutate(date_added = paste(day_added, month, year_added, sep = ".")) |>
+  select(-month_added, -day_added, -month) |>
+  mutate(date_added = dmy(date_added)) |>
+  mutate(date_added_ym = zoo::as.yearmon(date_added))
+
+
+data_clean_dfm <- data_clean |>
+  mutate(description = str_remove_all(description, pattern = "[[:punct:]]")) |>
+  corpus(text_field = "description") |>
+  tokens(remove_separators = T) |>
+  tokens_remove(stopwords()) |>
+  dfm()
+
+
+netflix_tf_idf <- data_clean_dfm |>
+  dfm_tolower() |>
+  dfm_wordstem() |>
+  dfm_tfidf()
+
+
+get_recommendation <- function(show, liked = T) {
+  library(dplyr)
+  library(quanteda)
+  
+  features <- netflix_tf_idf@docvars
+  show_id <- features$docname_[tolower(features$title) %in% tolower(show)]
+  show_id <- as.integer(str_remove_all(show_id, pattern = "text"))
+  
+  simil_mat <- textstat_simil(netflix_tf_idf[show_id,], netflix_tf_idf, method = "cosine")
+  
+  if (liked) {
+  simil_df <- data.frame(shows = simil_mat@Dimnames[[2]],
+                      simil = simil_mat@x) |>
+  arrange(-simil) |>
+  inner_join(select(netflix_tf_idf@docvars, docname_, title),
+             by = join_by(shows == docname_)) |>
+    select(-shows, match = simil) |>
+    mutate(match = (match-min(match))/(max(match)-min(match))) |>
+    head(11)
+  }
+  if (!liked){
+    simil_df <- data.frame(shows = simil_mat@Dimnames[[2]],
+                      simil = simil_mat@x) |>
+  arrange(simil) |>
+  inner_join(select(netflix_tf_idf@docvars, docname_, title),
+             by = join_by(shows == docname_)) |>
+    select(-shows, match = simil) |>
+    mutate(match = 1-(match-min(match))/(max(match)-min(match))) |>
+    head(11)
+  }
+  
+  return(simil_df[-1,])
+}
+
+
+get_recommendation_plot <- function(show) {
+  library(ggplot2)
+  
+  plot_df <- get_recommendation(show)
+  
+  ggplot(plot_df, aes(reorder(title, -match, identity), match, fill = match)) +
+  geom_col() +
+  labs(x = "Show", y = "Match") +
+  scale_fill_gradient(low = "#000000", high = "#990011FF") +
+  theme_classic() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")
+}
+```
+
+## Wordcloud
+```{r}
+#| echo: false
+plot_data <- data_clean_dfm |>
+  textstat_frequency(groups = year_added) |>
+  filter(rank %in% c(1:100) & group %in% c("2016", "2017", "2018", "2019", "2020", "2021")) |>
+  group_by(group) |>
+  mutate(r_frequency = 100*frequency/sum(frequency)) |>
+  ungroup()
+
+cloud1 <- plot_data |>
+  ggplot(aes(label = feature, size = r_frequency, color = r_frequency)) +
+  scale_size_area(max_size = 7) +
+  geom_text_wordcloud(seed = 14) +
+  scale_color_gradient(low = "#000000", high = "#ff0000") +
+  facet_wrap(~group, nrow = 1) +
+  labs(title = "Content trends in Netflix's new additions every year",
+       subtitle = "Most common words in the description of every newly added Movie or TV series") +
+  theme_minimal() +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        strip.text.x = element_text(size = 30, family = "Avengeance Heroic Avenger"),
+        plot.title = element_text(size = 32, family = "Bebas Neue", hjust = 0.5),
+        plot.subtitle = element_text(size = 22, family = "Bebas Neue", hjust = 0.5))
+
+cloud1
+```
+
+## Recommendations
+```{r}
+get_recommendation_plot("I Am Sam")
+```
+
+

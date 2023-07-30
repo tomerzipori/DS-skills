@@ -1,0 +1,465 @@
+---
+title: "Netflix trends"
+description: "Text data visualization and analysis"
+author: "Tomer Zipori"
+date: 2023-06-13
+title-block-banner: "#990011FF"
+title-block-banner-color: "#FCF6F5FF"
+execute: 
+  warning: false
+  message: false
+  cache: false
+format:
+  html:
+    theme: cosmo
+    page-layout: custom
+    toc: true
+    toc-depth: 2
+    toc-location: right
+server: shiny
+editor: visual
+---
+
+This document will be dedicated to some experimentation with text analysis and visualization. I will be using mostly basic and classic NLP tools like word counting and DFM's (Document-Feature matrix).
+
+I will be using the popular *Netflix* [dataset](https://www.kaggle.com/datasets/shivamb/netflix-shows) from Kaggle. It contains data of movies and TV shows added to Netflix's streaming service since 2008.
+
+```{r}
+#| output: false
+library(tidyverse)
+library(extrafont)
+library(lubridate)
+library(ggwordcloud)
+library(quanteda)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(shiny)
+library(shinydashboard)
+```
+
+```{r}
+#| echo: false
+#| output: false
+#font_import(pattern = "Bebas")
+#loadfonts(device = "win")
+```
+
+# Data loading
+Looking at the data.
+
+```{r}
+data <- read_csv("netflix_titles.csv", show_col_types = F)
+
+head(data)
+```
+
+Let's look at one of the more interesting fields in here, show's description - few sentences about the show or movie. Looking at the first three descriptions:
+
+```{r}
+head(data$description, 3)
+```
+
+We get to have the description of every TV show or movie added. This has potential...
+
+```{r}
+#| output: false
+months_names <- data.frame(name = month.name,
+                           month = seq(1,12,1))
+
+data_clean <- data |>
+  mutate(month_added = word(date_added, 1),
+         day_added = str_remove_all(word(date_added, 2), ","),
+         year_added = word(date_added, 3)) |>
+  left_join(months_names, by = join_by(month_added == name)) |>
+  mutate(date_added = paste(day_added, month, year_added, sep = ".")) |>
+  select(-month_added, -day_added, -month) |>
+  mutate(date_added = dmy(date_added)) |>
+  mutate(date_added_ym = zoo::as.yearmon(date_added))
+```
+
+## Text analysis of show description
+
+Here I'm creating the DFM. It is basically a huge matrix with each document (show description) being a row, and each unique word being a column. Values represent the frequency of each word in each document.
+
+```{r}
+data_clean_dfm <- data_clean |>
+  mutate(description = str_remove_all(description, pattern = "[[:punct:]]")) |>
+  corpus(text_field = "description") |>
+  tokens(remove_separators = T) |>
+  tokens_remove(stopwords()) |>
+  dfm()
+
+data_clean_dfm
+```
+
+For example: The word 'father' appear once in the first document, and doesn't appear in documents 2 to 6.
+
+# Content trends in Netflix's new additions
+
+Although it is pretty basic, the DFM allows us to check many things. For example: Did Netflix's new content changed over the years? I thought it would be interesting to see the most frequent words in the descriptions of items added in each year.
+
+Here is a word cloud of show descriptions in each year, word's size and color represent their relative frequency.
+
+```{r}
+plot_data <- data_clean_dfm |>
+  textstat_frequency(groups = year_added) |>
+  filter(rank %in% c(1:100) & group %in% c("2016", "2017", "2018", "2019", "2020", "2021")) |>
+  group_by(group) |>
+  mutate(r_frequency = 100*frequency/sum(frequency)) |>
+  ungroup()
+
+cloud1 <- plot_data |>
+  ggplot(aes(label = feature, size = r_frequency, color = r_frequency)) +
+  scale_size_area(max_size = 7) +
+  geom_text_wordcloud(seed = 14) +
+  scale_color_gradient(low = "#000000", high = "#ff0000") +
+  facet_wrap(~group, nrow = 1) +
+  labs(title = "Content trends in Netflix's new additions every year",
+       subtitle = "Most common words in the description of every newly added Movie or TV series") +
+  theme_minimal() +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        strip.text.x = element_text(size = 30, family = "Avengeance Heroic Avenger"),
+        plot.title = element_text(size = 32, family = "Bebas Neue", hjust = 0.5),
+        plot.subtitle = element_text(size = 22, family = "Bebas Neue", hjust = 0.5))
+```
+
+```{r}
+#| fig-width: 13
+#| fig-height: 10
+cloud1
+```
+
+# Personal word cloud
+Word clouds can also be personalized, and created for the shows I liked or watched. Enter your favorite shows and see what popular words appear in their description.  
+
+Start typing the show's name and will appear.
+
+```{r}
+#| panel: sidebar
+selectInput(inputId = "watched_wordcloud", label = "I watched...", choices = data_clean$title, multiple = T, selected = data_clean$title[14])
+```
+
+```{r}
+#| panel: fill
+plotOutput("cloud1", height = "350px")
+```
+
+```{r}
+#| context: server
+library(tidyverse)
+library(extrafont)
+library(lubridate)
+library(ggwordcloud)
+library(quanteda)
+library(quanteda.textplots)
+library(quanteda.textstats)
+
+data <- read_csv("netflix_titles.csv", show_col_types = F)
+
+months_names <- data.frame(name = month.name,
+                           month = seq(1,12,1))
+
+data_clean <- data |>
+  mutate(month_added = word(date_added, 1),
+         day_added = str_remove_all(word(date_added, 2), ","),
+         year_added = word(date_added, 3)) |>
+  left_join(months_names, by = join_by(month_added == name)) |>
+  mutate(date_added = paste(day_added, month, year_added, sep = ".")) |>
+  select(-month_added, -day_added, -month) |>
+  mutate(date_added = dmy(date_added)) |>
+  mutate(date_added_ym = zoo::as.yearmon(date_added))
+
+data_clean_dfm <- data_clean |>
+  mutate(description = str_remove_all(description, pattern = "[[:punct:]]")) |>
+  corpus(text_field = "description") |>
+  tokens(remove_separators = T) |>
+  tokens_remove(stopwords()) |>
+  dfm()
+
+netflix_tf_idf <- data_clean_dfm |>
+  dfm_tolower() |>
+  dfm_wordstem() |>
+  dfm_tfidf()
+
+# Functions
+get_recommendation <- function(show, liked = T) {
+  library(dplyr)
+  library(quanteda)
+  
+  features <- netflix_tf_idf@docvars
+  show_id <- features$docname_[tolower(features$title) %in% tolower(show)]
+  show_id <- as.integer(str_remove_all(show_id, pattern = "text"))
+  
+  simil_mat <- textstat_simil(netflix_tf_idf[show_id,], netflix_tf_idf, method = "cosine")
+  
+  if (liked) {
+  simil_df <- data.frame(shows = simil_mat@Dimnames[[2]],
+                      simil = simil_mat@x) |>
+  arrange(-simil) |>
+  inner_join(select(netflix_tf_idf@docvars, docname_, title),
+             by = join_by(shows == docname_)) |>
+    select(-shows, match = simil) |>
+    mutate(match = (match-min(match))/(max(match)-min(match))) |>
+    head(11)
+  }
+  if (!liked){
+    simil_df <- data.frame(shows = simil_mat@Dimnames[[2]],
+                      simil = simil_mat@x) |>
+  arrange(simil) |>
+  inner_join(select(netflix_tf_idf@docvars, docname_, title),
+             by = join_by(shows == docname_)) |>
+    select(-shows, match = simil) |>
+    mutate(match = 1-(match-min(match))/(max(match)-min(match))) |>
+    head(11)
+  }
+  
+  return(arrange(simil_df[-1,], match))
+}
+
+get_recommendation_plot <- function(show, liked = T) {
+  library(ggplot2)
+  
+  plot_df <- get_recommendation(show, liked)
+  
+  plot <- ggplot(plot_df, aes(reorder(title, -match, identity), match, fill = match)) +
+  geom_col() +
+  labs(x = "Show", y = "Match") +
+  scale_fill_gradient(low = "#000000", high = "#990011FF") +
+  theme_classic() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 11, face = "bold"),
+        legend.position = "none")
+  
+  return(plot)
+}
+
+show_watched <- reactive({input$watched_recommendation})
+
+output$plot1 <- renderPlot({
+  get_recommendation_plot(show_watched())
+  })
+
+  
+personal_wordcloud <- function(shows){
+  data |>
+  mutate(month_added = word(date_added, 1),
+         day_added = str_remove_all(word(date_added, 2), ","),
+         year_added = word(date_added, 3)) |>
+  filter(title %in% shows) |>
+  left_join(months_names, by = join_by(month_added == name)) |>
+  mutate(date_added = paste(day_added, month, year_added, sep = ".")) |>
+  select(-month_added, -day_added, -month) |>
+  mutate(date_added = dmy(date_added)) |>
+  mutate(date_added_ym = zoo::as.yearmon(date_added)) |>
+  
+  
+  mutate(description = str_remove_all(description, pattern = "[[:punct:]]")) |>
+  corpus(text_field = "description") |>
+  tokens(remove_separators = T) |>
+  tokens_remove(stopwords()) |>
+  dfm() |>
+
+
+  textstat_frequency() |>
+  mutate(r_frequency = 100*frequency/sum(frequency)) |>
+
+
+  ggplot(aes(label = feature, size = r_frequency, fill = r_frequency, color = r_frequency)) +
+  scale_size_area(max_size = 7) +
+  geom_text_wordcloud(seed = 14) +
+  scale_fill_gradient(low = "#000000", high = "#990011FF") +
+  theme_classic() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 11, face = "bold"),
+        legend.position = "none")
+}
+
+shows_watched <- reactive({input$watched_wordcloud})
+
+output$cloud1 <- renderPlot({
+  personal_wordcloud(shows_watched())
+})
+```
+
+
+# Recommendation generator
+
+The Algorithm. Everyone online for the past 10 years are talking about the algorithm. 'The algorithm' is the method every app or website uses to predict our taste in videos/products/TV shows/twitts or Facebook posts.
+
+In this part I try to create my own mini 'algorithm', But first, a short explanation on vector representation and similarity between texts.
+
+## TF-IDF (Term Frequency - Inverse Document Frequency)
+
+### TF - Term Frequency
+
+Up until now I have used the most basic DFM - the count DFM. It basically counts the number of times each word appear in the document, and is sometimes also called 'Bag of Words'.\
+One problem that arises in our inner statistician is that longer documents contain more words! therefore, different term frequencies can be hard to compare. The simple solution is to calculate *Proportional frequency* in the following way:\
+$$
+term \ frequency= \frac{N \ times \ a \ word \ appear \ in \ the \ document}{Total \ number \ of \ words \ in \ the \ document}
+$$
+
+This gives us the **Term frequency** part of the tf-idf method.
+
+### Inverse Document Frequency
+
+So we have the term frequency of every token (word). We can start and make show recommendations, right? Another problem that still exist is that some words could be prevalent in **every** document. For example, if the word 'Life' appears in a large number of descriptions, it is not so useful in identifying someones taste in TV shows and movies. If, on the other hand, the word 'Father' appear only in a small number of descriptions, it will be a lot more helpful to us. Therefore, we want to represent term *Uniqueness*. How can we do that?
+
+For each token (word) the Inverse-Document-Frequency is calculated:\
+$$
+idf=log( \frac{Total \ number \ of \ documents}{N \ documents \ containing \ the \ term})
+$$
+
+This number is getting close to zero the more documents containing the word, and is getting larger the less documents contain it (and the more documents we have).
+
+To get the final tf-idf value for every term, we simply multiply the Term-Frequency with the Inverse-Document-Frequency:\
+$$
+tfidf(word)=tf(word) \cdot idf(word)
+$$
+
+In creating the tf-idf DFM, I have also converted every word to lower case and to it's stem.
+
+```{r}
+netflix_tf_idf <- data_clean_dfm |>
+  dfm_tolower() |>
+  dfm_wordstem() |>
+  dfm_tfidf()
+```
+
+## Cosine Similarity
+
+Now that we have the DFM, we have a vector representation of every description of every show. Every word in our dataset is a dimension and it's tf-idf in each document is the vector component. For example, the vector representation of the description of "Attack on Titan" is:
+
+```{r}
+dfm_subset(netflix_tf_idf, subset = title == "Attack on Titan")
+```
+
+Naturally these vector are mostly zeros...
+
+But now that we have vectors we can do all the cool things that we can do with vectors! For example, we can recommend TV shows and movies based on how their vector representations are *similar* to a previously watched show. But how to calculate the similarity of two vectors?
+
+If we return to Physics class, we can think of vectors as arrows with length and direction.
+
+![Two vectors](vectors.png)
+
+It is natural to think of the similarity between two vectors as the degree to which they point in the same direction. In other words, the angle between two vectors. It is possible to calculate the *cosine* between two vectors the following way:\
+$$
+cos \theta= \frac{ \vec{a} \cdot \vec{b}}{|\vec{a}| \cdot |\vec{b}|}
+$$
+
+Without turning this into a real Physics class, in the numerator is the dot-product of the vectors, and in the denominator is the product of lengths of the vectors. For example, the cosine between the vectors $\vec{a}=(1,1)$ and $\vec{b}=(-4,3)$ is:\
+$$
+cos \theta= \frac{1 \cdot (-4)+1 \cdot (3)}{ \sqrt{1^2+1^2} \cdot \sqrt{(-4)^2+3^2}}=\frac{-1}{5 \sqrt{2}}
+$$
+
+But what is the angle between \~15,000 dimensions vectors?! fortunately, this calculation remains the same in any dimension.
+
+What is the relation between the angle and it's cosine? without digging too deep, the larger the angle, the smaller the cosine. So the larger the cosine, the greater the similarity.
+
+::: callout-note
+Nice insight: the cosine similarity is nothing but the un-standardized pearson correlation coefficient! Let $x$ and $y$ be vectors of Z scores. The correlation coefficient is:\
+$$
+r_{xy}= \frac{\sum_{i=1}^{N}{x_i \cdot y_i}}{N}
+$$ While the cosine of the angle between them is:\
+$$
+cos \theta= \frac{\vec{x} \cdot \vec{y}}{|\vec{x}| \cdot |\vec{y}|}
+$$ The length of a vector of Z scores is $\sqrt{N}$, therefore the denominator is always: $\sqrt{N} \cdot \sqrt{N}=N$.\
+The nominator is the dot product of the vectors, which is exactly the sum of the by-component products. Finally we get:\
+$$
+r_{xy}=cos \ \theta_{xy}
+$$
+:::
+
+### Functions
+
+The main idea of the recommendation generator is simple. If you liked a TV show or a movie, you will probably like shows with similar description. Not any similarity, cosine similarity!
+
+```{r}
+#| code-fold: true
+get_recommendation <- function(show, liked = T) {
+  library(dplyr)
+  library(quanteda)
+  
+  features <- netflix_tf_idf@docvars
+  show_id <- features$docname_[tolower(features$title) %in% tolower(show)]
+  show_id <- as.integer(str_remove_all(show_id, pattern = "text"))
+  
+  simil_mat <- textstat_simil(netflix_tf_idf[show_id,], netflix_tf_idf, method = "cosine")
+  
+  if (liked) {
+  simil_df <- data.frame(shows = simil_mat@Dimnames[[2]],
+                      simil = simil_mat@x) |>
+  arrange(-simil) |>
+  inner_join(select(netflix_tf_idf@docvars, docname_, title),
+             by = join_by(shows == docname_)) |>
+    select(-shows, match = simil) |>
+    mutate(match = (match-min(match))/(max(match)-min(match))) |>
+    head(11)
+  }
+  if (!liked){
+    simil_df <- data.frame(shows = simil_mat@Dimnames[[2]],
+                      simil = simil_mat@x) |>
+  arrange(simil) |>
+  inner_join(select(netflix_tf_idf@docvars, docname_, title),
+             by = join_by(shows == docname_)) |>
+    select(-shows, match = simil) |>
+    mutate(match = 1-(match-min(match))/(max(match)-min(match))) |>
+    head(11)
+  }
+  
+  return(simil_df[-1,])
+}
+
+get_recommendation_plot <- function(show, liked = T) {
+  library(ggplot2)
+  
+  plot_df <- get_recommendation(show, liked)
+  
+  ggplot(plot_df, aes(reorder(title, -match, identity), match, fill = match)) +
+  geom_col() +
+  labs(x = "Show", y = "Match") +
+  scale_fill_gradient(low = "#000000", high = "#990011FF") +
+  theme_classic() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")
+}
+```
+
+### Getting show recommendations
+
+Let's use an example. Maybe I watched "Attack on Titan", what are the top 10 recommended shows for me?
+
+```{r}
+watched <- "Attack on Titan"
+
+get_recommendation(watched)
+```
+
+What if I did not like a show? no problem, switch the argument `liked` to `FALSE` and you will be recommended shows and movies that are not similar.
+
+```{r}
+get_recommendation("I Am Sam", liked = FALSE)
+```
+
+#### In a plot
+Looking at the recommendations for "Attack On Titan" in a plot.
+```{r}
+get_recommendation_plot(watched)
+```
+
+# Try it yourself!
+
+```{r}
+#| panel: sidebar
+selectInput(inputId = "watched_recommendation", label = "I watched...", choices = data_clean$title)
+```
+
+```{r}
+#| panel: fill
+plotOutput('plot1', height = "350px")
+```
+
