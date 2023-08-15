@@ -12,6 +12,7 @@ execute:
 format:
   html:
     theme: cosmo
+    column: page
     page-layout: custom
     toc: true
     toc-depth: 2
@@ -78,27 +79,28 @@ data_clean <- data |>
   mutate(date_added_ym = zoo::as.yearmon(date_added))
 ```
 
-# TV-Rating
-
+# TV/Movie Ratings
 Rating distribution of added shows. No significant changes over the years, Netflix is still somewhat of an adult platform.
 
 ```{r}
+#| out-width: 105%
 data_clean |>
   filter(!str_detect(rating, "min")) |>
   filter(year_added %in% seq(2016, 2021, 1)) |>
   ggplot(aes(x = rating, fill = factor(ifelse(rating %in% c("R", "NC-17", "TV-MA"), "Adults Only", "All Ages")))) +
-  facet_wrap(~year_added) +
+  facet_wrap(~year_added, nrow = 2, scales = "free_x") +
   scale_fill_manual(name = "Rating", values=c("#990011FF","grey50")) +
   geom_bar() +
   theme_classic() +
-  labs(x = "Rating", y = "", title = "Distribution of TV shows and movies of different ratings") +
+  labs(x = "Rating", y = "# of new titles", title = "Distribution of TV shows and movies of different ratings") +
   theme(plot.title = element_text(family = "serif", size = 14, hjust = .5),
-        axis.title.x = element_text(family = "serif", size = 11, hjust = .5))
+        axis.title = element_text(family = "serif", size = 11, hjust = .5),
+        axis.text.x = element_text(angle = 90, face = "bold"))
 ```
 
 ## Text analysis of show description
 
-Here I'm creating the DFM. It is basically a huge matrix with each document (show description) being a row, and each unique word being a column. Values represent the frequency of each word in each document.
+Here I'm creating a DFM. It is basically a huge matrix with each document (show description) being a row, and each unique word being a column. Values represent the frequency of each word in each document.
 
 ```{r}
 data_clean_dfm <- data_clean |>
@@ -176,7 +178,6 @@ library(quanteda.textplots)
 library(quanteda.textstats)
 
 data <- read_csv("netflix_titles.csv", show_col_types = F)
-embeddings <- read_rds("embedded_text.rds")
 
 months_names <- data.frame(name = month.name,
                            month = seq(1,12,1))
@@ -316,7 +317,7 @@ data_genres <- cbind(data, genres) |>
   mutate(genre1 = str_squish(genre1), genre2 = str_squish(genre2),
          genre3 = str_squish(genre3), genre4 = str_squish(genre4),
          genre5 = str_squish(genre5), genre6 = str_squish(genre6))
-  
+
 desc_genre <- data_genres |>
   select(title, description, genre1, genre2, genre3, genre4, genre5, genre6) |>
   pivot_longer(c(genre1, genre2, genre3, genre4, genre5, genre6),
@@ -333,7 +334,9 @@ desc_genre_dfm <- desc_genre |>
   tokens_remove(stopwords()) |>
   dfm() |>
   textstat_frequency(groups = genre) |>
-  mutate(r_frequency = 100*frequency/sum(frequency))
+  group_by(group) |>
+  mutate(r_frequency = 100*frequency/sum(frequency)) |>
+  ungroup()
 
 genre_wordcloud <- function(g, col = "#990011FF") {
   genre_wordcloud <- desc_genre_dfm |>
@@ -348,7 +351,7 @@ genre_wordcloud <- function(g, col = "#990011FF") {
           axis.ticks.y = element_blank(),
           axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 11, face = "bold"),
           legend.position = "none")
-  
+
   return(genre_wordcloud)
 }
 
@@ -361,9 +364,7 @@ output$genre_cloud <- renderPlot({
 ```
 
 # Different genres
-
-Each TV Show and movie in Netflix is listed in one or more genres. Play with inputs to see dominant words in description of different genres.
-
+Each TV Show and movie in Netflix is listed in one or more genres. Here are some wordclouds of popular genres:
 ```{r}
 genres <- data$listed_in |>
   str_remove_all("TV | TV|Shows|Movies") |>
@@ -397,18 +398,24 @@ desc_genre_dfm <- desc_genre |>
   mutate(r_frequency = 100*frequency/sum(frequency))
 
 genre_wordcloud <- desc_genre_dfm |>
-  filter(group == "Action" & rank <= 80) |>
+  filter(group %in% c("Action", "Dramas", "Comedies", "Documentaries") & rank <= 120) |>
   ggplot(aes(label = feature, size = r_frequency, fill = r_frequency, color = r_frequency)) +
   scale_size_area(max_size = 7) +
   geom_text_wordcloud(seed = 14) +
+  facet_wrap(~group, nrow = 2) +
   scale_color_gradient(low = "#000000", high = "#990011FF") +
   theme_classic() +
   theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 11, face = "bold"),
         legend.position = "none")
+
+genre_wordcloud
 ```
 
+
+## Compare between genres yourself!
+Play with inputs to see dominant words in description of different genres.
 ```{r}
 #| panel: sidebar
 selectInput(inputId = "genre", label = "Genre", choices = unique(desc_genre_dfm$group), multiple = T, selected = "Anime Features")
@@ -419,6 +426,7 @@ selectInput(inputId = "genre_color", label = "Color", choices = c("#EF8200", "#4
 #| panel: fill
 plotOutput("genre_cloud", height = "350px")
 ```
+
 
 # Recommendation generator
 
@@ -442,6 +450,7 @@ dfm_subset(netflix_tf_idf, subset = title == "Attack on Titan")
 ```
 
 Naturally these vector are mostly zeros...
+
 
 ### Functions
 

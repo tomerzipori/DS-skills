@@ -5,10 +5,10 @@ account: tomerzipori
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 9477597
-bundleId: 7511454
+bundleId: 7551136
 url: https://tomerzipori.shinyapps.io/Netflix_recommendation_generator/
-when: 1690715718.39843
-lastSyncTime: 1690715718.39844
+when: 1691648904.0927
+lastSyncTime: 1691648904.09271
 quarto_version: 1.3.361
 quarto_engines: knitr
 asMultiple: FALSE

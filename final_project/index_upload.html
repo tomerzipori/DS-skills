@@ -26,16 +26,16 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="index_files/libs/clipboard/clipboard.min.js"></script>
-<script src="index_files/libs/quarto-html/quarto.js"></script>
-<script src="index_files/libs/quarto-html/popper.min.js"></script>
-<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="index_files/libs/quarto-html/anchor.min.js"></script>
-<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="index_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="index_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="index_upload_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_upload_files/libs/quarto-html/quarto.js"></script>
+<script src="index_upload_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_upload_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_upload_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_upload_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_upload_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_upload_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_upload_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_upload_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <style>
 
       .quarto-title-block .quarto-title-banner h1,
@@ -101,13 +101,16 @@ background: #990011FF;
    
   <ul>
   <li><a href="#data-loading" id="toc-data-loading">Data loading</a></li>
-  <li><a href="#tv-rating" id="toc-tv-rating">TV-Rating</a>
+  <li><a href="#tvmovie-ratings" id="toc-tvmovie-ratings">TV/Movie Ratings</a>
   <ul>
   <li><a href="#text-analysis-of-show-description" id="toc-text-analysis-of-show-description">Text analysis of show description</a></li>
   </ul></li>
   <li><a href="#content-trends-in-netflixs-new-additions" id="toc-content-trends-in-netflixs-new-additions">Content trends in Netflix’s new additions</a></li>
   <li><a href="#personal-word-cloud" id="toc-personal-word-cloud">Personal word cloud</a></li>
-  <li><a href="#different-genres" id="toc-different-genres">Different genres</a></li>
+  <li><a href="#different-genres" id="toc-different-genres">Different genres</a>
+  <ul>
+  <li><a href="#compare-between-genres-yourself" id="toc-compare-between-genres-yourself">Compare between genres yourself!</a></li>
+  </ul></li>
   <li><a href="#recommendation-generator" id="toc-recommendation-generator">Recommendation generator</a>
   <ul>
   <li><a href="#cosine-similarity" id="toc-cosine-similarity">Cosine Similarity</a></li>
@@ -117,6 +120,12 @@ background: #990011FF;
 </nav>
 <p>This document will be dedicated to some experimentation with text analysis and visualization. I will be using mostly basic and classic NLP tools like word counting and DFM’s (Document-Feature matrix).</p>
 <p>I will be using the popular <em>Netflix</em> <a href="https://www.kaggle.com/datasets/shivamb/netflix-shows">dataset</a> from Kaggle. It contains data of movies and TV shows added to Netflix’s streaming service since 2008.</p>
+<div class="cell">
+
+</div>
+<div class="cell">
+
+</div>
 <section id="data-loading" class="level1">
 <h1>Data loading</h1>
 <p>Looking at the data.</p>
@@ -143,18 +152,21 @@ background: #990011FF;
 </div>
 </div>
 <p>We get to have the description of every TV show or movie added. This has potential…</p>
+<div class="cell">
+
+</div>
 </section>
-<section id="tv-rating" class="level1">
-<h1>TV-Rating</h1>
+<section id="tvmovie-ratings" class="level1">
+<h1>TV/Movie Ratings</h1>
 <p>Rating distribution of added shows. No significant changes over the years, Netflix is still somewhat of an adult platform.</p>
 <div class="cell">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+<div class="cell-output-display column-page">
+<p><img src="index_upload_files/figure-html/unnamed-chunk-6-1.png" class="column-page img-fluid" style="width:105.0%"></p>
 </div>
 </div>
 <section id="text-analysis-of-show-description" class="level2">
 <h2 data-anchor-id="text-analysis-of-show-description">Text analysis of show description</h2>
-<p>Here I’m creating the DFM. It is basically a huge matrix with each document (show description) being a row, and each unique word being a column. Values represent the frequency of each word in each document.</p>
+<p>Here I’m creating a DFM. It is basically a huge matrix with each document (show description) being a row, and each unique word being a column. Values represent the frequency of each word in each document.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>Document-feature matrix of: 8,807 documents, 20,824 features (99.93% sparse) and 13 docvars.
@@ -177,8 +189,11 @@ docs    father nears end life filmmaker kirsten johnson stages death inventive
 <p>Although it is pretty basic, the DFM allows us to check many things. For example: Did Netflix’s new content changed over the years? I thought it would be interesting to see the most frequent words in the descriptions of items added in each year.</p>
 <p>Here is a word cloud of show descriptions in each year, word’s size and color represent their relative frequency.</p>
 <div class="cell">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="1248"></p>
+
+</div>
+<div class="cell">
+<div class="cell-output-display column-page">
+<p><img src="index_upload_files/figure-html/unnamed-chunk-9-1.png" class="column-page img-fluid" width="1248"></p>
 </div>
 </div>
 </section>
@@ -188,7 +203,7 @@ docs    father nears end life filmmaker kirsten johnson stages death inventive
 <p>Start typing the show’s name and will appear.</p>
 <div class="panel-grid layout-sidebar ms-md-0 layout-sidebar-left">
 <div class="cell panel-sidebar card bg-light p-2 g-col-24 g-col-lg-7">
-<div class="cell-output-display no-overflow-x">
+<div class="cell-output-display column-page no-overflow-x">
 
 <div class="form-group shiny-input-container">
 <label class="control-label" id="watched_wordcloud-label" for="watched_wordcloud">I watched...</label>
@@ -9010,20 +9025,31 @@ Flying Fortress</option>
 <div class="panel-fill panel-grid g-col-24 g-col-lg-17 pt-3 pt-lg-0">
 <div class="g-col-24">
 <div class="cell panel-fill">
-<div class="cell-output-display">
+<div class="cell-output-display column-page">
 <div class="shiny-plot-output html-fill-item" id="cloud1" style="width:100%;height:350px;"></div>
 </div>
 </div>
 </div>
 </div>
 </div>
+<div class="cell" data-context="server">
+
+</div>
 </section>
 <section id="different-genres" class="level1">
 <h1>Different genres</h1>
-<p>Each TV Show and movie in Netflix is listed in one or more genres. Play with inputs to see dominant words in description of different genres.</p>
+<p>Each TV Show and movie in Netflix is listed in one or more genres. Here are some wordclouds of popular genres:</p>
+<div class="cell">
+<div class="cell-output-display column-page">
+<p><img src="index_upload_files/figure-html/unnamed-chunk-13-1.png" class="column-page img-fluid" width="672"></p>
+</div>
+</div>
+<section id="compare-between-genres-yourself" class="level2">
+<h2 data-anchor-id="compare-between-genres-yourself">Compare between genres yourself!</h2>
+<p>Play with inputs to see dominant words in description of different genres.</p>
 <div class="panel-grid layout-sidebar ms-md-0 layout-sidebar-left">
 <div class="cell panel-sidebar card bg-light p-2 g-col-24 g-col-lg-7">
-<div class="cell-output-display no-overflow-x">
+<div class="cell-output-display column-page no-overflow-x">
 <div class="form-group shiny-input-container">
 <label class="control-label" id="genre-label" for="genre">Genre</label>
 <div>
@@ -9068,7 +9094,7 @@ Flying Fortress</option>
 </div>
 </div>
 </div>
-<div class="cell-output-display no-overflow-x">
+<div class="cell-output-display column-page no-overflow-x">
 <div class="form-group shiny-input-container">
 <label class="control-label" id="genre_color-label" for="genre_color">Color</label>
 <div>
@@ -9084,7 +9110,7 @@ Flying Fortress</option>
 <div class="panel-fill panel-grid g-col-24 g-col-lg-17 pt-3 pt-lg-0">
 <div class="g-col-24">
 <div class="cell panel-fill">
-<div class="cell-output-display">
+<div class="cell-output-display column-page">
 <div class="shiny-plot-output html-fill-item" id="genre_cloud" style="width:100%;height:350px;"></div>
 </div>
 </div>
@@ -9092,10 +9118,14 @@ Flying Fortress</option>
 </div>
 </div>
 </section>
+</section>
 <section id="recommendation-generator" class="level1">
 <h1>Recommendation generator</h1>
 <p>The Algorithm. Everyone online for the past 10 years are talking about the algorithm. ‘The algorithm’ is the method every app or website uses to predict our taste in videos/products/TV shows/twitts or Facebook posts.</p>
 <p>In this part I try to create my own mini ‘algorithm’, Based on Cosine similarity between show’s descriptions.</p>
+<div class="cell">
+
+</div>
 <section id="cosine-similarity" class="level2">
 <h2 data-anchor-id="cosine-similarity">Cosine Similarity</h2>
 <p>Now that we have the DFM, we have a vector representation of every description of every show. Every word in our dataset is a dimension and it’s tf-idf in each document is the vector component. For example, the vector representation of the description of “Attack on Titan” is:</p>
@@ -9112,6 +9142,9 @@ docs      father near end life filmmak kirsten johnson stage death invent
 <section id="functions" class="level3">
 <h3 data-anchor-id="functions">Functions</h3>
 <p>The main idea of the recommendation generator is simple. If you liked a TV show or a movie, you will probably like shows with similar description. Not any similarity, cosine similarity!</p>
+<div class="cell">
+
+</div>
 </section>
 <section id="getting-show-recommendations" class="level3">
 <h3 data-anchor-id="getting-show-recommendations">Getting show recommendations</h3>
@@ -9151,8 +9184,8 @@ docs      father near end life filmmak kirsten johnson stage death invent
 <h4 data-anchor-id="in-a-plot">In a plot</h4>
 <p>Looking at the recommendations for “Attack On Titan” in a plot.</p>
 <div class="cell">
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
+<div class="cell-output-display column-page">
+<p><img src="index_upload_files/figure-html/unnamed-chunk-21-1.png" class="column-page img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -9163,7 +9196,7 @@ docs      father near end life filmmak kirsten johnson stage death invent
 <h1>Try it yourself!</h1>
 <div class="panel-grid layout-sidebar ms-md-0 layout-sidebar-left">
 <div class="cell panel-sidebar card bg-light p-2 g-col-24 g-col-lg-7">
-<div class="cell-output-display no-overflow-x">
+<div class="cell-output-display column-page no-overflow-x">
 
 <div class="form-group shiny-input-container">
 <label class="control-label" id="watched_recommendation-label" for="watched_recommendation">I watched...</label>
@@ -17985,7 +18018,7 @@ Flying Fortress</option>
 <div class="panel-fill panel-grid g-col-24 g-col-lg-17 pt-3 pt-lg-0">
 <div class="g-col-24">
 <div class="cell panel-fill">
-<div class="cell-output-display">
+<div class="cell-output-display column-page">
 <div class="shiny-plot-output html-fill-item" id="plot1" style="width:100%;height:350px;"></div>
 </div>
 </div>
@@ -18003,7 +18036,6 @@ library(quanteda.textplots)
 library(quanteda.textstats)
 
 data <- read_csv("netflix_titles.csv", show_col_types = F)
-embeddings <- read_rds("embedded_text.rds")
 
 months_names <- data.frame(name = month.name,
                            month = seq(1,12,1))
@@ -18143,7 +18175,7 @@ data_genres <- cbind(data, genres) |>
   mutate(genre1 = str_squish(genre1), genre2 = str_squish(genre2),
          genre3 = str_squish(genre3), genre4 = str_squish(genre4),
          genre5 = str_squish(genre5), genre6 = str_squish(genre6))
-  
+
 desc_genre <- data_genres |>
   select(title, description, genre1, genre2, genre3, genre4, genre5, genre6) |>
   pivot_longer(c(genre1, genre2, genre3, genre4, genre5, genre6),
@@ -18160,7 +18192,9 @@ desc_genre_dfm <- desc_genre |>
   tokens_remove(stopwords()) |>
   dfm() |>
   textstat_frequency(groups = genre) |>
-  mutate(r_frequency = 100*frequency/sum(frequency))
+  group_by(group) |>
+  mutate(r_frequency = 100*frequency/sum(frequency)) |>
+  ungroup()
 
 genre_wordcloud <- function(g, col = "#990011FF") {
   genre_wordcloud <- desc_genre_dfm |>
@@ -18175,7 +18209,7 @@ genre_wordcloud <- function(g, col = "#990011FF") {
           axis.ticks.y = element_blank(),
           axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 11, face = "bold"),
           legend.position = "none")
-  
+
   return(genre_wordcloud)
 }
 

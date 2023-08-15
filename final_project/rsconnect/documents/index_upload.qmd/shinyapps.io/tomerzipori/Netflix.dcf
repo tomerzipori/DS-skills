@@ -1,0 +1,16 @@
+name: Netflix
+title:
+username:
+account: tomerzipori
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9583033
+bundleId: 7551550
+url: https://tomerzipori.shinyapps.io/Netflix/
+when: 1691657604.57917
+lastSyncTime: 1691657604.57918
+quarto_version: 1.3.361
+quarto_engines: knitr
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: embedded_text.rds|index.html|index.qmd|kmeans.html|kmeans.qmd|netflix.qmd|recommend_app.R|vectors.png|index_files|kmeans_files
